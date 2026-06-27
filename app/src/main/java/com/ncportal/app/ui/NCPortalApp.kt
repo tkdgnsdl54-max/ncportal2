@@ -9,7 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.material.icons.filled.Work
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -27,13 +27,13 @@ import com.ncportal.app.ui.home.HomeScreen
 import com.ncportal.app.ui.settings.SettingsScreen
 import com.ncportal.app.ui.settings.ThemeMode
 import com.ncportal.app.ui.theme.NCPortalTheme
-import com.ncportal.app.ui.transfers.TransfersScreen
+import com.ncportal.app.ui.work.WorkScreen
 
 /** The portal's top-level sections, shown as bottom navigation destinations. */
 enum class PortalTab(val label: String, val icon: ImageVector) {
     HOME("홈", Icons.Filled.Home),
     FILES("파일", Icons.Filled.Folder),
-    TRANSFERS("전송", Icons.Filled.SwapVert),
+    WORK("업무", Icons.Filled.Work),
     SETTINGS("설정", Icons.Filled.Settings),
 }
 
@@ -81,7 +81,7 @@ fun NCPortalApp() {
                 when (selectedTab) {
                     PortalTab.HOME -> HomeScreen(onNavigateToFiles = { selectedTab = PortalTab.FILES })
                     PortalTab.FILES -> ExplorerScreen()
-                    PortalTab.TRANSFERS -> TransfersScreen()
+                    PortalTab.WORK -> WorkScreen()
                     PortalTab.SETTINGS -> SettingsScreen(
                         themeMode = themeMode,
                         onThemeModeChange = { themeMode = it },
