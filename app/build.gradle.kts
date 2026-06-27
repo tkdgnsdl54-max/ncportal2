@@ -1,4 +1,4 @@
-import java.io.FileInputStream
+﻿import java.io.FileInputStream
 import java.util.Properties
 
 plugins {
@@ -16,7 +16,7 @@ val keystoreProperties = Properties().apply {
 
 // debug.keystore is committed to the repo root with standard Android debug credentials.
 // Referencing it directly here (instead of relying on CI to copy it to ~/.android/)
-// guarantees every build — local or CI — uses the exact same certificate,
+// guarantees every build (local or CI) uses the exact same certificate,
 // so Obtainium can install updates without requiring an uninstall first.
 val committedKeystore = rootProject.file("debug.keystore")
 
@@ -28,8 +28,8 @@ android {
         applicationId = "com.ncportal.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 6
-        versionName = "0.4.0"
+        versionCode = 7
+        versionName = "0.4.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
