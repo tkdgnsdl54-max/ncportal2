@@ -7,15 +7,18 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
-// Load an optional release keystore. Create `keystore.properties` at the repo root
-// (gitignored) to sign release builds with a stable key; otherwise release falls
-// back to the debug key so the build still yields an installable APK.
 val keystorePropertiesFile = rootProject.file("keystore.properties")
 val keystoreProperties = Properties().apply {
     if (keystorePropertiesFile.exists()) {
         FileInputStream(keystorePropertiesFile).use { load(it) }
     }
 }
+
+// debug.keystore is committed to the repo root with standard Android debug credentials.
+// Referencing it directly here (instead of relying on CI to copy it to ~/.android/)
+// guarantees every build — local or CI — uses the exact same certificate,
+// so Obtainium can install updates without requiring an uninstall first.
+val committedKeystore = rootProject.file("debug.keystore")
 
 android {
     namespace = "com.ncportal.app"
@@ -32,25 +35,40 @@ android {
     }
 
     signingConfigs {
+        // Stable signing: use the committed keystore when it exists (local dev + CI).
+        if (committedKeystore.exists()) {
+            create("stable") {
+                storeFile     = committedKeystore
+                storePassword = "android"
+                keyAlias      = "androiddebugkey"
+                keyPassword   = "android"
+            }
+        }
+        // Optional production keystore via keystore.properties (gitignored).
         if (keystorePropertiesFile.exists()) {
             create("release") {
-                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storeFile     = file(keystoreProperties.getProperty("storeFile"))
                 storePassword = keystoreProperties.getProperty("storePassword")
-                keyAlias = keystoreProperties.getProperty("keyAlias")
-                keyPassword = keystoreProperties.getProperty("keyPassword")
+                keyAlias      = keystoreProperties.getProperty("keyAlias")
+                keyPassword   = keystoreProperties.getProperty("keyPassword")
             }
         }
     }
 
     buildTypes {
+        debug {
+            // Override the auto-generated per-machine debug key with our stable committed key.
+            signingConfig = signingConfigs.findByName("stable")
+                ?: signingConfigs.getByName("debug")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            // Use the real release key when configured, else the debug key.
             signingConfig = signingConfigs.findByName("release")
+                ?: signingConfigs.findByName("stable")
                 ?: signingConfigs.getByName("debug")
         }
     }

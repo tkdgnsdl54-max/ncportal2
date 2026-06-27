@@ -3,6 +3,9 @@ name: Build APK
 # 푸시/태그/수동 실행 시 클라우드에서 APK를 빌드한다.
 # - main(또는 master) 푸시: 디버그 APK를 아티팩트로 업로드
 # - vX.Y.Z 태그 푸시: 위 APK를 GitHub Release에 첨부 (Obtainium 등으로 자동 업데이트 추적 가능)
+#
+# 서명: build.gradle.kts가 repo 루트의 debug.keystore를 직접 참조하므로
+# CI가 키스토어를 복사할 필요 없이 항상 동일한 인증서로 서명됩니다.
 on:
   push:
     branches: [ main, master ]
@@ -29,19 +32,6 @@ jobs:
 
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
-
-      # 안정적 서명: repo에 커밋된 debug.keystore가 있으면 그것으로 서명한다.
-      # (없으면 러너가 매번 새 키를 만들어 서명이 달라져 업데이트 설치가 안 됨)
-      # debug.keystore는 "Bootstrap signing keystore" 워크플로를 한 번 실행하면 생성·커밋된다.
-      - name: Use committed debug keystore (stable signature)
-        run: |
-          if [ -f debug.keystore ]; then
-            mkdir -p ~/.android
-            cp debug.keystore ~/.android/debug.keystore
-            echo "고정 debug.keystore로 서명합니다."
-          else
-            echo "::warning::debug.keystore가 없습니다. 러너 기본 키로 서명되어 업데이트 호환성이 없습니다. 먼저 'Bootstrap signing keystore' 워크플로를 실행하세요."
-          fi
 
       - name: Build debug APK
         run: ./gradlew assembleDebug --no-daemon --stacktrace
