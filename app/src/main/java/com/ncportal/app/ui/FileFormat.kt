@@ -1,6 +1,7 @@
 package com.ncportal.app.ui
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Article
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.FolderZip
 import androidx.compose.material.icons.filled.Image
@@ -42,5 +43,6 @@ fun iconForFile(name: String): ImageVector =
         "pdf" -> Icons.Filled.PictureAsPdf
         "xls", "xlsx", "csv" -> Icons.Filled.TableChart
         "zip", "tar", "gz", "rar", "7z" -> Icons.Filled.FolderZip
+        "md" -> Icons.Filled.Article
         else -> Icons.Filled.Description
     }

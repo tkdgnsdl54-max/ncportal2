@@ -11,7 +11,10 @@ data class ExplorerUiState(
     /** Children of the open folder, already sorted for display. */
     val entries: List<Entry> = emptyList(),
     val viewMode: ViewMode = ViewMode.LIST,
+    /** Non-null when the post reader is shown over the board list. */
+    val selectedPost: Entry? = null,
 ) {
     val currentFolder: Entry? get() = path.lastOrNull()
     val canNavigateUp: Boolean get() = path.size > 1
+    val isPostOpen: Boolean get() = selectedPost != null
 }

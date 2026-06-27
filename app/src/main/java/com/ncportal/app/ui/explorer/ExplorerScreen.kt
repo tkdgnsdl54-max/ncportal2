@@ -54,8 +54,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ncportal.app.data.SampleExplorerRepository
 import com.ncportal.app.model.Entry
+import com.ncportal.app.ui.formatDate
 import com.ncportal.app.ui.formatSize
 import com.ncportal.app.ui.iconForFile
+import com.ncportal.app.ui.latestPostMillis
+import com.ncportal.app.ui.postCount
+import com.ncportal.app.ui.postExcerpt
+import com.ncportal.app.ui.postTitle
+import com.ncportal.app.ui.reader.PostReaderScreen
 import com.ncportal.app.ui.theme.NCPortalTheme
 
 @Composable
@@ -67,6 +73,7 @@ fun ExplorerScreen(viewModel: ExplorerViewModel = viewModel()) {
         onBreadcrumb = viewModel::navigateTo,
         onUp = { viewModel.navigateUp() },
         onToggleView = viewModel::toggleViewMode,
+        onClosePost = viewModel::closePost,
     )
 }
 
@@ -77,9 +84,21 @@ private fun ExplorerScreen(
     onBreadcrumb: (Int) -> Unit,
     onUp: () -> Unit,
     onToggleView: () -> Unit,
+    onClosePost: () -> Unit,
 ) {
-    // Hardware/gesture back navigates up the tree until we reach the root.
-    BackHandler(enabled = state.canNavigateUp, onBack = onUp)
+    // At most one BackHandler is ever enabled — post reader closes before tree-up.
+    BackHandler(enabled = state.isPostOpen, onBack = onClosePost)
+    BackHandler(enabled = !state.isPostOpen && state.canNavigateUp, onBack = onUp)
+
+    val post = state.selectedPost
+    if (post != null) {
+        PostReaderScreen(
+            entry = post,
+            boardName = state.currentFolder?.name.orEmpty(),
+            onBack = onClosePost,
+        )
+        return
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         ExplorerTopBar(
@@ -205,7 +224,7 @@ private fun EntryRow(entry: Entry, onClick: () -> Unit) {
         Spacer(Modifier.width(16.dp))
         Column(Modifier.weight(1f)) {
             Text(
-                text = entry.name,
+                text = if (entry.isPost) postTitle(entry) else entry.name,
                 style = MaterialTheme.typography.bodyLarge,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -215,6 +234,18 @@ private fun EntryRow(entry: Entry, onClick: () -> Unit) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            if (entry.isPost) {
+                val excerpt = postExcerpt(entry.content)
+                if (excerpt.isNotEmpty()) {
+                    Text(
+                        text = excerpt,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
         }
         if (entry.isFolder) {
             Icon(
@@ -259,7 +290,7 @@ private fun EntryGridItem(entry: Entry, onClick: () -> Unit) {
             EntryIcon(entry, size = 48.dp)
             Spacer(Modifier.height(8.dp))
             Text(
-                text = entry.name,
+                text = if (entry.isPost) postTitle(entry) else entry.name,
                 style = MaterialTheme.typography.bodyMedium,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
@@ -301,8 +332,15 @@ private fun EmptyFolder(modifier: Modifier = Modifier) {
     }
 }
 
-private fun Entry.subtitle(): String =
-    if (isFolder) "${children.size}개 항목" else formatSize(sizeBytes)
+private fun Entry.subtitle(): String = when {
+    isFolder -> {
+        val n = postCount(this)
+        val latest = latestPostMillis(this)
+        if (latest > 0) "게시글 ${n}개 · ${formatDate(latest)}" else "게시글 ${n}개"
+    }
+    isPost -> formatDate(modifiedAt)
+    else -> formatSize(sizeBytes)
+}
 
 @Preview(showBackground = true)
 @Composable
@@ -321,6 +359,7 @@ private fun ExplorerScreenPreview() {
             onBreadcrumb = {},
             onUp = {},
             onToggleView = {},
+            onClosePost = {},
         )
     }
 }

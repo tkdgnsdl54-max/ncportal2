@@ -11,33 +11,33 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 
-/**
- * Holds the explorer's navigation state as a stack of folders and exposes a
- * single [uiState] for the screen to render. Swap the repository for a real
- * data source when one exists.
- */
 class ExplorerViewModel : ViewModel() {
 
     private val repository: ExplorerRepository = SampleExplorerRepository()
 
-    // index 0 == root, last element == the currently open folder.
     private val pathStack = MutableStateFlow(listOf(repository.root()))
     private val viewMode = MutableStateFlow(ViewMode.LIST)
+    private val selectedPost = MutableStateFlow<Entry?>(null)
 
     val uiState: StateFlow<ExplorerUiState> =
-        combine(pathStack, viewMode) { stack, mode -> buildState(stack, mode) }
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5_000),
-                initialValue = buildState(pathStack.value, viewMode.value),
-            )
+        combine(pathStack, viewMode, selectedPost) { stack, mode, post ->
+            buildState(stack, mode, post)
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = buildState(pathStack.value, viewMode.value, selectedPost.value),
+        )
 
-    /** Open a folder (descend into it). Files are a no-op for now — hook actions here later. */
+    /** Folder => descend. .md post => open reader. Other files => no-op. */
     fun open(entry: Entry) {
-        if (entry.isFolder) {
-            pathStack.value = pathStack.value + entry
+        when {
+            entry.isFolder -> pathStack.value = pathStack.value + entry
+            entry.isPost   -> selectedPost.value = entry
         }
     }
+
+    /** Close the reader and return to the board list. */
+    fun closePost() { selectedPost.value = null }
 
     /** Jump to a breadcrumb segment by its index in the current path. */
     fun navigateTo(index: Int) {
@@ -59,14 +59,14 @@ class ExplorerViewModel : ViewModel() {
         viewMode.value = if (viewMode.value == ViewMode.LIST) ViewMode.GRID else ViewMode.LIST
     }
 
-    private fun buildState(stack: List<Entry>, mode: ViewMode) = ExplorerUiState(
+    private fun buildState(stack: List<Entry>, mode: ViewMode, post: Entry?) = ExplorerUiState(
         path = stack,
         entries = stack.last().children.sortedWith(EntryOrder),
         viewMode = mode,
+        selectedPost = post,
     )
 
     private companion object {
-        // Folders first, then files; case-insensitive alphabetical within each group.
         val EntryOrder: Comparator<Entry> =
             compareByDescending<Entry> { it.isFolder }.thenBy { it.name.lowercase() }
     }

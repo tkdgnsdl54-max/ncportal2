@@ -13,8 +13,13 @@ data class Entry(
     val sizeBytes: Long = 0L,
     val modifiedAt: Long = 0L,
     val children: List<Entry> = emptyList(),
+    val content: String? = null,
 ) {
     val isFolder: Boolean get() = type == EntryType.FOLDER
+
+    val isPost: Boolean
+        get() = type == EntryType.FILE &&
+            name.substringAfterLast('.', "").equals("md", ignoreCase = true)
 }
 
 enum class EntryType { FOLDER, FILE }
