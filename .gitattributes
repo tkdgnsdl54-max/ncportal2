@@ -1,0 +1,16 @@
+# Normalize line endings in the repo so the Linux CI runner gets correct files.
+* text=auto
+
+# The Gradle wrapper script MUST be LF, or CI fails with "bad interpreter: /bin/sh^M".
+gradlew text eol=lf
+*.sh text eol=lf
+
+# Windows batch files stay CRLF.
+*.bat text eol=crlf
+
+# Binary assets — never touch line endings.
+*.jar binary
+*.keystore binary
+*.png binary
+*.jpg binary
+*.webp binary

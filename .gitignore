@@ -1,0 +1,19 @@
+*.iml
+.gradle/
+/local.properties
+.idea/
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+*.apk
+*.aab
+*.keystore
+*.jks
+keystore.properties
+!debug.keystore
+
+# Claude Code local (machine-specific) settings
+.claude/settings.local.json
